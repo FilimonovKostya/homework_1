@@ -12,9 +12,10 @@ const {OK, CREATED, NOT_FOUND, NO_CONTENT, BAD_REQUEST} = HTTP_STATUS_CODES
 describe('Videos CRUD operations', () => {
     const app = setupApp(express())
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         await request(app)
             .delete('/all-data')
+            .expect(NO_CONTENT)
     })
 
     const video: CreateVideoType = {
@@ -40,10 +41,10 @@ describe('Videos CRUD operations', () => {
     });
 
     it('should create a new video first', async () => {
-        let createdVideo1 = null
+        let createdVideo1
 
         const video: CreateVideoType = {
-            title: 'New video 1',
+            title: 'New video 111111',
             author: 'Filimonov',
             availableResolutions: [videoResolution.P144]
         }
@@ -64,14 +65,19 @@ describe('Videos CRUD operations', () => {
 
 
     it('should create the second video', async () => {
-        let createdVideo2 = null
-        let response = null
+        let createdVideo2
+        let response
 
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'New video 3'})
+            .expect(CREATED)
 
         const createdResponse = await request(app)
             .post('/videos')
             .send(video)
             .expect(CREATED)
+
 
         createdVideo2 = createdResponse.body
         expect(createdVideo2.body).toEqual(createdVideo2.body)
@@ -79,7 +85,6 @@ describe('Videos CRUD operations', () => {
         response = await request(app)
             .get('/videos')
             .expect(OK, DB_VIDEOS)
-
 
         expect(response.body).toHaveLength(2)
         expect(response.body[1]).toEqual(createdVideo2)
@@ -151,7 +156,17 @@ describe('Videos CRUD operations', () => {
     ;
 
     it('should find video by ID', async () => {
-        let response = null
+        let response
+
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 1'})
+            .expect(CREATED)
+
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 2'})
+            .expect(CREATED)
 
         response = await request(app)
             .get('/videos/2')
@@ -169,8 +184,17 @@ describe('Videos CRUD operations', () => {
     });
 
     it('should update existing video', async () => {
-        let createdVideo = null
-        let updateVideo = null
+        let createdVideo
+        let updateVideo
+
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 3'})
+            .expect(CREATED)
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 4'})
+            .expect(CREATED)
 
         createdVideo = await request(app)
             .post('/videos')
@@ -194,6 +218,11 @@ describe('Videos CRUD operations', () => {
 
     it('should not update the video', async () => {
         await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 4'})
+            .expect(CREATED)
+
+        await request(app)
             .put('/videos/-100')
             .send({...updateVideoBody, title: ''})
             .expect(NOT_FOUND)
@@ -215,7 +244,22 @@ describe('Videos CRUD operations', () => {
     });
 
     it('should delete the video', async () => {
-        let allVideos = null
+        let allVideos
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 5'})
+            .expect(CREATED)
+
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 6'})
+            .expect(CREATED)
+
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 7'})
+            .expect(CREATED)
+
 
         await request(app)
             .delete('/videos/3')
@@ -229,7 +273,17 @@ describe('Videos CRUD operations', () => {
     });
 
     it('should not delete the video', async () => {
-        let allVideos = null
+        let allVideos
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 4'})
+            .expect(CREATED)
+
+        await request(app)
+            .post('/videos')
+            .send({...video, title: 'Video 5'})
+            .expect(CREATED)
+
         await request(app)
             .delete('/videos/-100')
             .expect(NOT_FOUND)
@@ -239,6 +293,13 @@ describe('Videos CRUD operations', () => {
             .expect(OK)
         expect(allVideos.body.length).toBe(2)
 
+    });
+
+    it('should delete all videos', async () => {
+
+        await request(app)
+            .delete('/all-data')
+            .expect(NO_CONTENT)
     });
 
 
