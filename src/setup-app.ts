@@ -87,7 +87,7 @@ const validationHandlerOnUpdateVideo = (data: PutVideoType):
     }
 
 
-    if (!publicationDate) {
+    if (!publicationDate || publicationDate.length === 0 || typeof publicationDate !== 'string' || !Date.parse(publicationDate)) {
         errorMessages.push(REQUIRED_FIELDS_ERROR.publicationDate)
     }
 

@@ -252,7 +252,10 @@ describe('Videos CRUD operations', () => {
                 publicationDate: "2025-11-18T16:05:35.174Z"
             })
             .expect(BAD_REQUEST, {errorsMessages: [ REQUIRED_FIELDS_ERROR.title,REQUIRED_FIELDS_ERROR.canBeDownloaded]})
-
+        await request(app)
+            .put(`${videosRoute}/1`)
+            .send({...updateVideoBody, author:'not valid'.repeat(4), publicationDate:1995})
+            .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.author, REQUIRED_FIELDS_ERROR.publicationDate]})
 
     })
     ;
