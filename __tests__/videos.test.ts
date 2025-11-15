@@ -240,9 +240,22 @@ describe('Videos CRUD operations', () => {
             .put(`${videosRoute}/1`)
             .send({...updateVideoBody, canBeDownloaded: null})
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.canBeDownloaded]})
+        await request(app)
+            .put(`${videosRoute}/1`)
+            .send({
+                ...updateVideoBody,
+                title: null,
+                author: "valid author",
+                availableResolutions: ["P144", "P240", "P720"],
+                canBeDownloaded: "string",
+                minAgeRestriction: 17,
+                publicationDate: "2025-11-18T16:05:35.174Z"
+            })
+            .expect(BAD_REQUEST, {errorsMessages: [ REQUIRED_FIELDS_ERROR.title,REQUIRED_FIELDS_ERROR.canBeDownloaded]})
 
 
-    });
+    })
+    ;
 
     it('should delete the video', async () => {
         let allVideos

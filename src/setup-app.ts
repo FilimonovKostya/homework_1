@@ -78,7 +78,7 @@ const validationHandlerOnUpdateVideo = (data: PutVideoType):
     ) {
         errorMessages.push(REQUIRED_FIELDS_ERROR.availableResolutions)
     }
-    if (!Object.keys(data).includes('canBeDownloaded') && typeof canBeDownloaded !== 'boolean' || canBeDownloaded === null) {
+    if (!Object.keys(data).includes('canBeDownloaded') && typeof canBeDownloaded !== 'boolean' || typeof canBeDownloaded === 'string' || canBeDownloaded === null) {
         errorMessages.push(REQUIRED_FIELDS_ERROR.canBeDownloaded)
     }
 
@@ -146,7 +146,7 @@ export const setupApp = (app: Express) => {
             author,
             canBeDownloaded: false,
             minAgeRestriction: null,
-            createdAt ,
+            createdAt,
             publicationDate,
             availableResolutions,
         }
