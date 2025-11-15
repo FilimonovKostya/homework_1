@@ -137,15 +137,18 @@ export const setupApp = (app: Express) => {
 
         const {title, author, availableResolutions} = body;
 
+        const createdAt = new Date().toISOString()
+        const publicationDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
         const createdNewVideo: CreatedVideoResponseType = {
             id: DB_VIDEOS.length + 1,
             title,
             author,
-            availableResolutions,
             canBeDownloaded: false,
-            createdAt: new Date().toISOString(),
             minAgeRestriction: null,
-            publicationDate: new Date().getTime().toString(),
+            createdAt ,
+            publicationDate,
+            availableResolutions,
         }
         DB_VIDEOS.push(createdNewVideo)
 
