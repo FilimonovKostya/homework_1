@@ -6,6 +6,7 @@ import {HTTP_STATUS_CODES} from "../src/core/httpStatus";
 import {REQUIRED_FIELDS_ERROR} from "../src/core/constants";
 import {CreateVideoType, videoResolution} from "../src/core/types/createVideoType";
 import {PutVideoType} from "../src/core/types/PutVideoType";
+import {videosRoute} from "../src/videos/routingConstants";
 
 const {OK, CREATED, NOT_FOUND, NO_CONTENT, BAD_REQUEST} = HTTP_STATUS_CODES
 
@@ -14,7 +15,7 @@ describe('Videos CRUD operations', () => {
 
     beforeEach(async () => {
         await request(app)
-            .delete('/all-data')
+            .delete('/testing/all-data')
             .expect(NO_CONTENT)
     })
 
@@ -36,7 +37,7 @@ describe('Videos CRUD operations', () => {
 
     it('should return videos', async () => {
         await request(app)
-            .get('/videos')
+            .get(videosRoute)
             .expect(OK, [])
     });
 
@@ -50,7 +51,7 @@ describe('Videos CRUD operations', () => {
         }
 
         const createdResponse = await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send(video)
             .expect(CREATED)
 
@@ -58,7 +59,7 @@ describe('Videos CRUD operations', () => {
         expect(createdVideo1.body).toEqual(createdVideo1.body)
 
         await request(app)
-            .get('/videos')
+            .get(videosRoute)
             .expect(OK, [createdVideo1])
 
     });
@@ -69,12 +70,12 @@ describe('Videos CRUD operations', () => {
         let response
 
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'New video 3'})
             .expect(CREATED)
 
         const createdResponse = await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send(video)
             .expect(CREATED)
 
@@ -83,7 +84,7 @@ describe('Videos CRUD operations', () => {
         expect(createdVideo2.body).toEqual(createdVideo2.body)
 
         response = await request(app)
-            .get('/videos')
+            .get(videosRoute)
             .expect(OK, DB_VIDEOS)
 
         expect(response.body).toHaveLength(2)
@@ -100,54 +101,54 @@ describe('Videos CRUD operations', () => {
 
         // Validations for Title
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({
                 ...requiredBody,
                 title: null
             })
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.title]})
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...requiredBody, title: ''})
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.title]})
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...requiredBody, title: 'Long String'.repeat(4)})
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.title]})
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...requiredBody, title: -100})
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.title]})
 
         // Validations for Author
         await request(app)
-            .post('/videos')
-            .send({...requiredBody, author: -100})
-            .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.author]})
+            .post(videosRoute)
+            .send({...requiredBody, author: -100, title: null})
+            .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.title, REQUIRED_FIELDS_ERROR.author]})
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...requiredBody, author: "New author".repeat(4)})
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.author]})
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...requiredBody, author: ''})
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.author]})
 
         // Validation for Available resolutions
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...requiredBody, availableResolutions: []})
             .expect(BAD_REQUEST, {
                 errorsMessages: [REQUIRED_FIELDS_ERROR.availableResolutions]
             })
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...requiredBody, availableResolutions: ['not_valid']})
             .expect(BAD_REQUEST, {
                 errorsMessages: [REQUIRED_FIELDS_ERROR.availableResolutions]
             })
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...requiredBody, availableResolutions: [1]})
             .expect(BAD_REQUEST, {
                 errorsMessages: [REQUIRED_FIELDS_ERROR.availableResolutions]
@@ -159,17 +160,17 @@ describe('Videos CRUD operations', () => {
         let response
 
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 1'})
             .expect(CREATED)
 
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 2'})
             .expect(CREATED)
 
         response = await request(app)
-            .get('/videos/2')
+            .get(`${videosRoute}/2`)
             .expect(OK, DB_VIDEOS[1])
 
         expect(response.body.id).toBe(2)
@@ -179,7 +180,7 @@ describe('Videos CRUD operations', () => {
 
     it('should not find video by ID', async () => {
         await request(app)
-            .get('/videos/-100')
+            .get(`${videosRoute}/-100`)
             .expect(NOT_FOUND)
     });
 
@@ -188,27 +189,27 @@ describe('Videos CRUD operations', () => {
         let updateVideo
 
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 3'})
             .expect(CREATED)
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 4'})
             .expect(CREATED)
 
         createdVideo = await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send(video)
             .expect(CREATED)
         expect(createdVideo.body.title).toBe(video.title)
 
         await request(app)
-            .put('/videos/3')
+            .put(`${videosRoute}/3`)
             .send({...updateVideoBody})
             .expect(NO_CONTENT)
 
         updateVideo = await request(app)
-            .get('/videos')
+            .get(videosRoute)
             .expect(OK)
         expect(updateVideo.body[2].title).toBe('UPDATED VIDEO')
         expect(updateVideo.body[2].id).toBe(3)
@@ -218,25 +219,25 @@ describe('Videos CRUD operations', () => {
 
     it('should not update the video', async () => {
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 4'})
             .expect(CREATED)
 
         await request(app)
-            .put('/videos/-100')
+            .put(`${videosRoute}/-100`)
             .send({...updateVideoBody, title: ''})
             .expect(NOT_FOUND)
 
         await request(app)
-            .put('/videos/1')
+            .put(`${videosRoute}/1`)
             .send({...updateVideoBody, minAgeRestriction: 19})
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.minAgeRestriction]})
         await request(app)
-            .put('/videos/1')
+            .put(`${videosRoute}/1`)
             .send({...updateVideoBody, publicationDate: ''})
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.publicationDate]})
         await request(app)
-            .put('/videos/1')
+            .put(`${videosRoute}/1`)
             .send({...updateVideoBody, canBeDownloaded: null})
             .expect(BAD_REQUEST, {errorsMessages: [REQUIRED_FIELDS_ERROR.canBeDownloaded]})
 
@@ -246,27 +247,27 @@ describe('Videos CRUD operations', () => {
     it('should delete the video', async () => {
         let allVideos
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 5'})
             .expect(CREATED)
 
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 6'})
             .expect(CREATED)
 
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 7'})
             .expect(CREATED)
 
 
         await request(app)
-            .delete('/videos/3')
+            .delete(`${videosRoute}/3`)
             .expect(NO_CONTENT)
 
         allVideos = await request(app)
-            .get('/videos')
+            .get(videosRoute)
             .expect(OK)
         expect(allVideos.body.length).toBe(2)
 
@@ -275,30 +276,29 @@ describe('Videos CRUD operations', () => {
     it('should not delete the video', async () => {
         let allVideos
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 4'})
             .expect(CREATED)
 
         await request(app)
-            .post('/videos')
+            .post(videosRoute)
             .send({...video, title: 'Video 5'})
             .expect(CREATED)
 
         await request(app)
-            .delete('/videos/-100')
+            .delete(`${videosRoute}/-100`)
             .expect(NOT_FOUND)
 
         allVideos = await request(app)
-            .get('/videos')
+            .get(videosRoute)
             .expect(OK)
         expect(allVideos.body.length).toBe(2)
 
     });
 
     it('should delete all videos', async () => {
-
         await request(app)
-            .delete('/all-data')
+            .delete('/testing/all-data')
             .expect(NO_CONTENT)
     });
 

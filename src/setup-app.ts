@@ -21,42 +21,45 @@ const {OK, NO_CONTENT, CREATED, NOT_FOUND, BAD_REQUEST} = HTTP_STATUS_CODES
 
 
 const validationHandlerOnCreateVideo = (data: CreateVideoType):
-    ValidationHandlerCreateVideoType | null => {
+    ValidationHandlerCreateVideoType[] | null => {
     const {title, author, availableResolutions} = data || {}
+
+    const errorMessages = []
 
     if (!title || typeof title !== "string"
         || title.length === 0
         || title.length > MAX_LENGTH_TITLE) {
-        return REQUIRED_FIELDS_ERROR.title
-    }
+        errorMessages.push(REQUIRED_FIELDS_ERROR.title)
 
+    }
     if (!author
         || typeof author !== "string"
         || !author.length
         || author.length > MAX_LENGTH_AUTHOR
     ) {
-        return REQUIRED_FIELDS_ERROR.author
+        errorMessages.push(REQUIRED_FIELDS_ERROR.author)
     }
 
     if (availableResolutions.length === 0
         || !availableResolutions
         || availableResolutions.some((resolution) => !AVAILABLE_RESOLUTIONS.includes(resolution))
         || !Array.isArray(availableResolutions)) {
-        return REQUIRED_FIELDS_ERROR.availableResolutions
+        errorMessages.push(REQUIRED_FIELDS_ERROR.availableResolutions)
     }
 
-    return null
+    return errorMessages.length > 0 ? errorMessages : null
 }
 
 const validationHandlerOnUpdateVideo = (data: PutVideoType):
-    ValidationHandlerCreateVideoType | null => {
+    ValidationHandlerCreateVideoType[] | null => {
     const {title, author, availableResolutions, canBeDownloaded, minAgeRestriction, publicationDate} = data || {}
+    const errorMessages = []
 
 
     if (!title || typeof title !== "string"
         || title.length === 0
         || title.length > MAX_LENGTH_TITLE) {
-        return REQUIRED_FIELDS_ERROR.title
+        errorMessages.push(REQUIRED_FIELDS_ERROR.title)
     }
 
     if (!author
@@ -64,7 +67,7 @@ const validationHandlerOnUpdateVideo = (data: PutVideoType):
         || !author.length
         || author.length > MAX_LENGTH_AUTHOR
     ) {
-        return REQUIRED_FIELDS_ERROR.author
+        errorMessages.push(REQUIRED_FIELDS_ERROR.author)
     }
 
 
@@ -73,23 +76,23 @@ const validationHandlerOnUpdateVideo = (data: PutVideoType):
         || availableResolutions.some((resolution) => !AVAILABLE_RESOLUTIONS.includes(resolution))
         || !Array.isArray(availableResolutions)
     ) {
-        return REQUIRED_FIELDS_ERROR.availableResolutions
+        errorMessages.push(REQUIRED_FIELDS_ERROR.availableResolutions)
     }
     if (!Object.keys(data).includes('canBeDownloaded') && typeof canBeDownloaded !== 'boolean' || canBeDownloaded === null) {
-        return REQUIRED_FIELDS_ERROR.canBeDownloaded
+        errorMessages.push(REQUIRED_FIELDS_ERROR.canBeDownloaded)
     }
 
     if (minAgeRestriction && (minAgeRestriction > MIN_AGE_RESTRICTION && minAgeRestriction > MAX_AGE_RESTRICTION)) {
-        return REQUIRED_FIELDS_ERROR.minAgeRestriction
+        errorMessages.push(REQUIRED_FIELDS_ERROR.minAgeRestriction)
     }
 
 
     if (!publicationDate) {
-        return REQUIRED_FIELDS_ERROR.publicationDate
+        errorMessages.push(REQUIRED_FIELDS_ERROR.publicationDate)
     }
 
 
-    return null
+    return errorMessages.length > 0 ? errorMessages : null
 }
 
 
@@ -127,8 +130,8 @@ export const setupApp = (app: Express) => {
 
         const error = validationHandlerOnCreateVideo(body)
 
-        if (error && error.message) {
-            res.status(BAD_REQUEST).json({errorsMessages: [error]})
+        if (error && error.length > 0) {
+            res.status(BAD_REQUEST).json({errorsMessages: error})
             return
         }
 
@@ -140,9 +143,9 @@ export const setupApp = (app: Express) => {
             author,
             availableResolutions,
             canBeDownloaded: false,
-            createdAt: '2025-11-09T20:52:26.177Z',
+            createdAt: new Date().toISOString(),
             minAgeRestriction: null,
-            publicationDate: Date.now().toString(),
+            publicationDate: new Date().getTime().toString(),
         }
         DB_VIDEOS.push(createdNewVideo)
 
@@ -171,8 +174,8 @@ export const setupApp = (app: Express) => {
         const error = validationHandlerOnUpdateVideo(req.body)
 
 
-        if (error?.message) {
-            res.status(BAD_REQUEST).json({errorsMessages: [error]})
+        if (error && error.length > 0) {
+            res.status(BAD_REQUEST).json({errorsMessages: error})
             return
         }
 
@@ -207,7 +210,7 @@ export const setupApp = (app: Express) => {
     })
 
     //DELETE ALL BASE
-    app.delete("/all-data", (req: Request, res: Response) => {
+    app.delete("/testing/all-data", (req: Request, res: Response) => {
         DB_VIDEOS.splice(0, DB_VIDEOS.length)
         res.sendStatus(NO_CONTENT)
     })
