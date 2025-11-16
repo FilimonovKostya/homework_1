@@ -4,11 +4,12 @@ import {DB_VIDEOS} from "../db";
 import {
     CreatedVideoResponseType,
     CreateVideoType,
-    ValidationHandlerCreateVideoResponseType
+    ValidationHandlerCreateVideoResponseType, ValidationHandlerCreateVideoType
 } from "../core/types/createVideoType";
 import {PutVideoType} from "../core/types/PutVideoType";
 import {HTTP_STATUS_CODES} from "../core/httpStatus";
 import {validationHandlerOnCreateVideo, validationHandlerOnUpdateVideo} from "../utils";
+import {videoRepository} from "../repositories/videoRepository";
 
 const {OK, NO_CONTENT, CREATED, NOT_FOUND, BAD_REQUEST} = HTTP_STATUS_CODES
 
@@ -22,88 +23,50 @@ videoRouter.get('/', (_, res: Response<GetVideoType[]>) => {
 
 //GET VIDEO BY ID
 videoRouter.get(`/:videoID`, (req: Request<GetVideoById>, res: Response<GetVideoType>) => {
-    const {videoID} = req.params
+    const foundedVideo = videoRepository.findVideoById(+req.params.videoID)
 
-    if (!Number.isInteger(+videoID)) {
+    if (!foundedVideo) {
         res.sendStatus(NOT_FOUND)
-        return
+    } else {
+        res.status(OK).json(foundedVideo)
     }
-
-    const isExistVideoByID = DB_VIDEOS.find(({id}) => id === +videoID)
-
-    if (!isExistVideoByID) {
-        res.sendStatus(NOT_FOUND)
-        return
-    }
-
-    const foundedVideo = DB_VIDEOS.find(({id}) => id === +req.params.videoID)
-    res.status(OK).json(foundedVideo)
 });
 
 //POST VIDEOS
 videoRouter.post('/', (req: Request<{}, {}, CreateVideoType>, res: Response<CreatedVideoResponseType | ValidationHandlerCreateVideoResponseType>) => {
-    const {body} = req
+    const error: ValidationHandlerCreateVideoType[] | null = validationHandlerOnCreateVideo(req.body)
 
-    const error = validationHandlerOnCreateVideo(body)
-
-    if (error && error.length > 0) {
+    if (error) {
         res.status(BAD_REQUEST).json({errorsMessages: error})
         return
     }
 
-    const {title, author, availableResolutions} = body;
-
-    const createdAt = new Date().toISOString()
-    const publicationDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-
-    const createdNewVideo: CreatedVideoResponseType = {
-        id: DB_VIDEOS.length + 1,
-        title,
-        author,
-        canBeDownloaded: false,
-        minAgeRestriction: null,
-        createdAt,
-        publicationDate,
-        availableResolutions,
-    }
-    DB_VIDEOS.push(createdNewVideo)
-
-    res.status(CREATED).json(createdNewVideo)
+    res.status(CREATED).json(videoRepository.createVideo(req.body))
 })
 
 //PUT VIDEO
 videoRouter.put(`/:videoID`, (req: Request<GetVideoById, {}, PutVideoType>, res: Response<ValidationHandlerCreateVideoResponseType | null>) => {
     const {videoID} = req.params
 
-
     if (!Number.isInteger(+videoID)) {
         res.sendStatus(NOT_FOUND)
         return
     }
 
-
     const idDataBase = DB_VIDEOS.find(({id}) => id === +videoID)?.id
-
     if (!Number.isInteger(idDataBase)) {
         res.sendStatus(NOT_FOUND)
         return
     }
 
-
     const error = validationHandlerOnUpdateVideo(req.body)
-
 
     if (error && error.length > 0) {
         res.status(BAD_REQUEST).json({errorsMessages: error})
         return
     }
 
-    const updatedVideo = DB_VIDEOS.map((video) => video.id === +videoID ?
-        {...video, ...req.body}
-        : video
-    )
-    DB_VIDEOS.splice(0, DB_VIDEOS.length, ...updatedVideo)
-
+    videoRepository.updateVideo(+videoID, req.body)
     res.sendStatus(NO_CONTENT)
 })
 
@@ -111,19 +74,18 @@ videoRouter.put(`/:videoID`, (req: Request<GetVideoById, {}, PutVideoType>, res:
 videoRouter.delete(`/:videoID`, (req: Request<GetVideoById>, res: Response) => {
     const {videoID} = req.params
 
+    const isExistVideoByID = videoRepository.deleteVideo(+videoID)
+
     if (!Number.isInteger(+videoID)) {
         res.sendStatus(NOT_FOUND)
         return
     }
 
-    const isExistVideoByID = DB_VIDEOS.find(({id}) => id === +videoID)
-
-    if (!isExistVideoByID) {
+    if (isExistVideoByID) {
         res.sendStatus(NOT_FOUND)
         return
     }
 
-    DB_VIDEOS.splice(DB_VIDEOS.findIndex(({id}) => id === +req.params.videoID), 1)
     res.sendStatus(NO_CONTENT)
 
 })
