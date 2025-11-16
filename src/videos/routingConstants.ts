@@ -1,1 +1,1 @@
-export const videosRoute = '/videos';
+export const videosUrl = '/videos';
